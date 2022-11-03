@@ -7,8 +7,8 @@ var Item =
 
 // Storage.
 
-var StorageClientMemory =
-	require("./Storage/StorageClientMemory").StorageClientMemory;
+//var StorageClientFilesystem = require("./Storage/StorageClientFilesystem").StorageClientFilesystem;
+var StorageClientMemory = require("./Storage/StorageClientMemory").StorageClientMemory;
 
 // Web.
 
@@ -37,17 +37,11 @@ class NodeJsWebServerWithBackend
 {
 	main()
 	{
-		var items =
-		[
-			new Item("Item0"),
-			new Item("Item1"),
-			new Item("Item2")
-		];
+		var storageClient =
+			new StorageClientMemory();
+			//new StorageClientFilesystem("./Data/");
 
-		var storageClient = new StorageClientMemory
-		(
-			items
-		);
+		storageClient.initialize();
 
 		var webServer = new WebServer
 		(
@@ -69,7 +63,22 @@ class NodeJsWebServerWithBackend
 			]
 		);
 
-		webServer.start();
+		var items =
+		[
+			new Item("Item0"),
+			new Item("Item1"),
+			new Item("Item2")
+		];
+
+		storageClient.itemsSave
+		(
+			items,
+			this,
+			() =>
+			{
+				webServer.start();
+			}
+		);
 	}
 }
 

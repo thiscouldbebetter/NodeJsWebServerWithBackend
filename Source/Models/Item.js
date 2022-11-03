@@ -6,13 +6,27 @@ exports.Item = class Item
 		this.name = name;
 	}
 
-	toStringJson()
+	id()
 	{
-		return JSON.stringify(this);
+		return this.name;
 	}
 
 	toStringHtml()
 	{
 		return this.toStringJson();
+	}
+
+	// Json.
+
+	static fromStringJson(itemAsJson)
+	{
+		var itemAsObject = JSON.parse(itemAsJson);
+		Object.setPrototypeOf(itemAsObject, Item.prototype);
+		return itemAsObject;
+	}
+
+	toStringJson()
+	{
+		return JSON.stringify(this);
 	}
 }
