@@ -11,7 +11,7 @@ exports.StorageClientMemory = class StorageClientMemory
 		// Do nothing.
 	}
 
-	itemsGetAll(callback, contextForCallback)
+	itemsGetAll(contextForCallback, callback)
 	{
 		var itemsRetrieved = this.items;
 		callback.call(contextForCallback, itemsRetrieved);

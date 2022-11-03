@@ -1,5 +1,6 @@
 
 var http = require("http");
+var url = require("url");
 
 var WebDivision =
 	require("./Elements/WebDivision").WebDivision;
@@ -16,11 +17,59 @@ var WebParagraph =
 
 exports.WebServer = class WebServer
 {
-	constructor(hostAddress, portNumber, storageClient)
+	constructor
+	(
+		hostAddress,
+		portNumber,
+		storageClient,
+		routes
+	)
 	{
 		this.hostAddress = hostAddress;
 		this.portNumber = portNumber;
 		this.storageClient = storageClient;
+
+		this.routes = routes;
+		this._routesByPath = new Map
+		(
+			this.routes.map(x => [ x.path, x ] )
+		);
+	}
+
+	pageGetForWebRequestDefault(webRequest)
+	{
+		var pageToReturn = null;
+
+		this.storageClient.connect();
+		this.storageClient.itemsGetAll
+		(
+			this, // context
+
+			(itemsRetrieved) =>
+			{
+				pageToReturn = new WebPage
+				(
+					new WebDivision
+					([
+						new WebHeading(3, "Node.js Web Server with Backend"),
+						new WebParagraph
+						(
+							"A simple Node.js web server with a backing data store."
+						),
+						new WebLabel("Items Retrieved:"),
+						new WebList(itemsRetrieved)
+					])
+				);
+			}
+		);
+
+		return pageToReturn;
+
+	}
+
+	routeByPath(path)
+	{
+		return this._routesByPath.get(path);
 	}
 
 	start()
@@ -45,42 +94,32 @@ exports.WebServer = class WebServer
 		if (webRequest.url == "/favicon.ico")
 		{
 			// Ignore favicon requests.
-			return;
 		}
+		else
+		{
+			var requestUrlParsed = url.parse(webRequest.url);
+			var requestPath = requestUrlParsed.pathname;
+			var routeForRequestPath =
+				this.routeByPath(requestPath);
 
-		this.storageClient.connect();
-		this.storageClient.itemsGetAll
-		(
-			this.handleRequest_ItemsGetAllComplete.bind(this, webResult),
-			this // context
-		);
-	}
+			var pageGetForPath =
+			(
+				routeForRequestPath == null
+				? this.pageGetForWebRequestDefault
+				: routeForRequestPath.pageGetForWebRequest
+			);
+			var pageToRender = pageGetForPath.call(this);
 
-	handleRequest_ItemsGetAllComplete(webResult, itemsRetrieved)
-	{
-		webResult.writeHead
-		(
-			200, // OK
-			{"Content-Type": "text/html"}
-		);
+			var htmlToReturn = pageToRender.toStringHtml();
+			console.log("Returning: " + htmlToReturn);
 
-		var pageToReturn = new WebPage
-		(
-			new WebDivision
-			([
-				new WebHeading(3, "Node.js Web Server with Backend"),
-				new WebParagraph
-				(
-					"A simple Node.js web server with a backing data store."
-				),
-				new WebLabel("Items Retrieved:"),
-				new WebList(itemsRetrieved)
-			])
-		);
-		var htmlToReturn = pageToReturn.toStringHtml();
+			webResult.writeHead
+			(
+				200, // OK
+				{"Content-Type": "text/html"}
+			);
 
-		console.log("Returning: " + htmlToReturn);
-
-		webResult.end(htmlToReturn);
+			webResult.end(htmlToReturn);
+		}
 	}
 }
