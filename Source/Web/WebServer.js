@@ -16,11 +16,11 @@ var WebParagraph =
 
 exports.WebServer = class WebServer
 {
-	constructor(hostAddress, portNumber, database)
+	constructor(hostAddress, portNumber, storageClient)
 	{
 		this.hostAddress = hostAddress;
 		this.portNumber = portNumber;
-		this.database = database;
+		this.storageClient = storageClient;
 	}
 
 	start()
@@ -48,8 +48,8 @@ exports.WebServer = class WebServer
 			return;
 		}
 
-		this.database.connect();
-		this.database.itemsGetAll
+		this.storageClient.connect();
+		this.storageClient.itemsGetAll
 		(
 			this.handleRequest_ItemsGetAllComplete.bind(this, webResult),
 			this // context
