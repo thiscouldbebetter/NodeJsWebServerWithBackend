@@ -7,11 +7,15 @@ var Item =
 
 // Storage.
 
-//var StorageClientFilesystem = require("./Storage/StorageClientFilesystem").StorageClientFilesystem;
-var StorageClientMemory = require("./Storage/StorageClientMemory").StorageClientMemory;
+var FileHelper =
+	require("./Storage/FileHelper").FileHelper;
+var StorageClientFilesystem = require("./Storage/StorageClientFilesystem").StorageClientFilesystem;
+//var StorageClientMemory = require("./Storage/StorageClientMemory").StorageClientMemory;
 
 // Web.
 
+var WebPageFromHtmlFile =
+	require("./Web/WebPageFromHtmlFile").WebPageFromHtmlFile;
 var WebRoute =
 	require("./Web/WebRoute").WebRoute;
 var WebServer =
@@ -26,8 +30,10 @@ var WebLabel =
 	require("./Web/Elements/WebLabel").WebLabel;
 var WebList =
 	require("./Web/Elements/WebList").WebList;
-var WebPage =
-	require("./Web/Elements/WebPage").WebPage;
+var WebPageFromElements =
+	require("./Web/WebPageFromElements").WebPageFromElements;
+var WebPageStatusCodes =
+	require("./Web/Elements/WebPageStatusCodes").WebPageStatusCodes;
 var WebParagraph =
 	require("./Web/Elements/WebParagraph").WebParagraph;
 
@@ -37,9 +43,11 @@ class NodeJsWebServerWithBackend
 {
 	main()
 	{
+		var fileHelper = new FileHelper();
+
 		var storageClient =
-			new StorageClientMemory();
-			//new StorageClientFilesystem("./Data/");
+			//new StorageClientMemory();
+			new StorageClientFilesystem(fileHelper, "../Data/");
 
 		storageClient.initialize();
 
@@ -51,15 +59,102 @@ class NodeJsWebServerWithBackend
 			[
 				new WebRoute
 				(
-					"/healthcheck",
-					(webRequest) =>
+					"/",
+					(webRequest, contextForCallback, callback) =>
 					{
-						return new WebPage
+						var page = new WebPageFromHtmlFile
 						(
-							new WebParagraph("OK")
-						)
+							fileHelper,
+							WebPageStatusCodes.Instance().Ok,
+							"Pages/Welcome.html"
+						);
+
+						callback.call(contextForCallback, page);
 					}
-				)
+				),
+
+				new WebRoute
+				(
+					"/healthcheck",
+					(webRequest, contextForCallback, callback) =>
+					{
+						callback.call
+						(
+							contextForCallback,
+							new WebPageFromElements
+							(
+								WebPageStatusCodes.Instance().Ok,
+								new WebParagraph("OK")
+							)
+						);
+					}
+				),
+
+				new WebRoute
+				(
+					"/fromFile",
+					(webRequest, contextForCallback, callback) =>
+					{
+						var page = new WebPageFromHtmlFile
+						(
+							fileHelper,
+							WebPageStatusCodes.Instance().Ok,
+							"Pages/FromFile.html"
+						);
+
+						callback.call(contextForCallback, page);
+					}
+				),
+
+				new WebRoute
+				(
+					"/ItemSearch.html",
+					(webRequest, contextForCallback, callback) =>
+					{
+						var page = new WebPageFromHtmlFile
+						(
+							fileHelper,
+							WebPageStatusCodes.Instance().Ok,
+							"Pages/ItemSearch.html"
+						);
+
+						callback.call(contextForCallback, page);
+					}
+				),
+
+
+				new WebRoute
+				(
+					"/UserDetails.html",
+					(webRequest, contextForCallback, callback) =>
+					{
+						var page = new WebPageFromHtmlFile
+						(
+							fileHelper,
+							WebPageStatusCodes.Instance().Ok,
+							"Pages/UserDetails.html"
+						);
+
+						callback.call(contextForCallback, page);
+					}
+				),
+
+				new WebRoute
+				(
+					"/UserLogin.html",
+					(webRequest, contextForCallback, callback) =>
+					{
+						var page = new WebPageFromHtmlFile
+						(
+							fileHelper,
+							WebPageStatusCodes.Instance().Ok,
+							"Pages/UserLogin.html"
+						);
+
+						callback.call(contextForCallback, page);
+					}
+				),
+
 			]
 		);
 

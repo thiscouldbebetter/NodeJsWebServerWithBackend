@@ -1,15 +1,14 @@
 
-var fs = require('fs');
+var FileHelper = require("./FileHelper").FileHelper;
 
 var Item = require("../Models/Item").Item;
 
 exports.StorageClientFilesystem = class StorageClientFilesystem
 {
-	constructor(directoryPathRoot)
+	constructor(fileHelper, directoryPathRoot)
 	{
+		this.fileHelper = fileHelper;
 		this.directoryPathRoot = directoryPathRoot + "/";
-
-		this.textEncodingName = "utf8";
 	}
 
 	connect()
@@ -26,34 +25,26 @@ exports.StorageClientFilesystem = class StorageClientFilesystem
 
 	initialize()
 	{
-		if (fs.existsSync(this.directoryPathRoot) == false)
+		var doesRootDirectoryExist =
+			this.fileHelper.directoryExistsAtPath(this.directoryPathRoot);
+
+		if (doesRootDirectoryExist == false)
 		{
-			fs.mkdir
+			this.fileHelper.directoryCreateAtPath
 			(
-				this.directoryPathRoot, 
-				(err) =>
-				{
-					if (err != null)
-					{
-						throw err;
-					}
-				}
+				this.directoryPathRoot
 			);
 		}
 
 		var itemsDirectoryPath = this.itemsDirectoryPath();
-		if (fs.existsSync(itemsDirectoryPath) == false)
+		var doesItemsDirectoryExist =
+			this.fileHelper.directoryExistsAtPath(itemsDirectoryPath);
+
+		if (doesItemsDirectoryExist == false)
 		{
-			fs.mkdir
+			this.fileHelper.directoryCreateAtPath
 			(
-				itemsDirectoryPath,
-				(err) =>
-				{
-					if (err != null)
-					{
-						throw err;
-					}
-				}
+				itemsDirectoryPath
 			);
 		}
 
@@ -73,44 +64,34 @@ exports.StorageClientFilesystem = class StorageClientFilesystem
 
 		var itemsReadSoFarCount = 0;
 
-		var fileNamesInDirectory = fs.readdir
+		var fileNamesInDirectory = this.fileHelper.fileNamesGetInDirectoryAtPathAsync
 		(
 			itemsDirectoryPath,
-			(err, fileNames) =>
+			(fileNames) =>
 			{
 				for (var i = 0; i < fileNames.length; i++)
 				{
 					var fileName = fileNames[i];
 					var filePath = itemsDirectoryPath + fileName;
-					fs.readFile
+					this.fileHelper.fileAtPathContentsReadAsync
 					(
 						filePath,
-						this.textEncodingName,
-						(err, fileContents) =>
+						(fileContents) =>
 						{
-							if (err)
+							var itemAsJson = fileContents;
+							var item =
+								Item.fromStringJson(itemAsJson);
+							itemsRetrievedSoFar.push(item);
+							itemsReadSoFarCount++;
+							if (itemsReadSoFarCount >= fileNames.length)
 							{
-								throw err;
-							}
-							else
-							{
-								var itemAsJson = fileContents;
-								var item =
-									Item.fromStringJson(itemAsJson);
-								itemsRetrievedSoFar.push(item);
-								itemsReadSoFarCount++;
-								if (itemsReadSoFarCount >= fileNames.length)
-								{
-									callback.call(contextForCallback, itemsRetrievedSoFar);
-								}
+								callback.call(contextForCallback, itemsRetrievedSoFar);
 							}
 						}
 					);
 				}
 			}
 		);
-
-		callback.call(contextForCallback, itemsRetrievedSoFar);
 	}
 
 	itemsSave(itemsToSave, contextForCallback, callback)
@@ -126,24 +107,16 @@ exports.StorageClientFilesystem = class StorageClientFilesystem
 
 			var itemsSavedSoFarCount = 0;
 
-			fs.writeFile
+			this.fileHelper.fileAtPathWriteStringAsync
 			(
 				itemFilePath,
 				itemAsJsonString,
-				this.textEncodingName,
-				(err, data) =>
+				() =>
 				{
-					if (err != null)
+					itemsSavedSoFarCount++;
+					if (itemsSavedSoFarCount >= itemsToSave.length)
 					{
-						throw err;
-					}
-					else
-					{
-						itemsSavedSoFarCount++;
-						if (itemsSavedSoFarCount >= itemsToSave.length)
-						{
-							callback.call(contextForCallback, data);
-						}
+						callback.call(contextForCallback);
 					}
 				}
 			);

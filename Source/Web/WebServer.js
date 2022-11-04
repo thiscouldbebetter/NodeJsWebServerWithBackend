@@ -10,8 +10,10 @@ var WebLabel =
 	require("./Elements/WebLabel").WebLabel;
 var WebList =
 	require("./Elements/WebList").WebList;
-var WebPage =
-	require("./Elements/WebPage").WebPage;
+var WebPageFromElements =
+	require("./WebPageFromElements").WebPageFromElements;
+var WebPageStatusCodes =
+	require("./Elements/WebPageStatusCodes").WebPageStatusCodes;
 var WebParagraph =
 	require("./Elements/WebParagraph").WebParagraph;
 
@@ -36,7 +38,9 @@ exports.WebServer = class WebServer
 		);
 	}
 
-	pageGetForWebRequestDefault(webRequest)
+	pageGetForWebRequestDefault(
+		webRequest, contextForCallback, callback
+	)
 	{
 		var pageToReturn = null;
 
@@ -47,8 +51,9 @@ exports.WebServer = class WebServer
 
 			(itemsRetrieved) =>
 			{
-				pageToReturn = new WebPage
+				pageToReturn = new WebPageFromElements
 				(
+					WebPageStatusCodes.Instance().Ok,
 					new WebDivision
 					([
 						new WebHeading(3, "Node.js Web Server with Backend"),
@@ -60,11 +65,10 @@ exports.WebServer = class WebServer
 						new WebList(itemsRetrieved)
 					])
 				);
+
+				callback.call(contextForCallback, pageToReturn);
 			}
 		);
-
-		return pageToReturn;
-
 	}
 
 	routeByPath(path)
@@ -108,18 +112,26 @@ exports.WebServer = class WebServer
 				? this.pageGetForWebRequestDefault
 				: routeForRequestPath.pageGetForWebRequest
 			);
-			var pageToRender = pageGetForPath.call(this);
-
-			var htmlToReturn = pageToRender.toStringHtml();
-			console.log("Returning: " + htmlToReturn);
-
-			webResult.writeHead
+			pageGetForPath.call
 			(
-				200, // OK
-				{"Content-Type": "text/html"}
+				this,
+				webRequest,
+				this, // contextForCallback
+				(pageToRender) => // callback
+				{
+					var htmlToReturn = pageToRender.toStringHtml();
+					console.log("Returning: " + htmlToReturn);
+
+					webResult.writeHead
+					(
+						pageToRender.statusCode,
+						{"Content-Type": "text/html"}
+					);
+
+					webResult.end(htmlToReturn);
+				}
 			);
 
-			webResult.end(htmlToReturn);
 		}
 	}
 }

@@ -1,8 +1,9 @@
 
-exports.WebPage = class WebPage
+exports.WebPageFromElements = class WebPageFromElements
 {
-	constructor(elementRoot)
+	constructor(statusCode, elementRoot)
 	{
+		this.statusCode = statusCode;
 		this.elementRoot = elementRoot;
 	}
 
