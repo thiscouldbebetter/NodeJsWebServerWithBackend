@@ -38,13 +38,23 @@ exports.WebServer = class WebServer
 		(
 			this.routes.map(x => [ x.path, x ] )
 		);
+
+		this.isLoggingEnabled = false;
+	}
+
+	log(messageToLog)
+	{
+		if (this.isLoggingEnabled)
+		{
+			console.log(messageToLog);
+		}
 	}
 
 	pageGetForWebRequestDefault(
 		webRequest, contextForCallback, callback
 	)
 	{
-		console.log("No route found.");
+		log("No route found.");
 
 		var pageErrorNotFound = new WebPageFromHtmlFile(
 			WebPageStatusCodes.Instance().NotFound,
@@ -67,7 +77,7 @@ exports.WebServer = class WebServer
 		);
 
 		this.server.listen(this.portNumber, this.hostAddress);
-		console.log
+		this.log
 		(
 			"Server running at http://"
 			+ this.hostAddress + ":" + this.portNumber + "/"
@@ -84,7 +94,28 @@ exports.WebServer = class WebServer
 		}
 		else
 		{
-			var webServer = this;
+			var dataReadFromRequestSoFar = "";
+
+			webRequest.on
+			(
+				"readable",
+				() =>
+				{
+					var dataReadFromRequestJustNow = webRequest.read();
+					dataReadFromRequestSoFar +=
+						dataReadFromRequestJustNow;
+					console.log("drfrjn is: " + dataReadFromRequestJustNow);
+				}
+			);
+
+			webRequest.on
+			(
+				"end",
+				() =>
+				{
+					console.log("dataReadFromRequestSoFar is " + dataReadFromRequestSoFar);
+				}
+			);
 
 			var requestUrlParsed = url.parse(webRequest.url);
 			var requestPath = requestUrlParsed.pathname;
@@ -106,7 +137,7 @@ exports.WebServer = class WebServer
 				{
 					var htmlToReturn =
 						pageToRender.toStringHtmlForWebServer(this);
-					console.log("Returning: " + htmlToReturn);
+					this.log("Returning: " + htmlToReturn);
 
 					webResult.writeHead
 					(
