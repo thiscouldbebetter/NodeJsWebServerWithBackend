@@ -14,8 +14,6 @@ var StorageClientFilesystem = require("./Storage/StorageClientFilesystem").Stora
 
 // Web.
 
-var WebPageFromHtmlFile =
-	require("./Web/WebPageFromHtmlFile").WebPageFromHtmlFile;
 var WebRoute =
 	require("./Web/WebRoute").WebRoute;
 var WebServer =
@@ -57,104 +55,23 @@ class NodeJsWebServerWithBackend
 			1337, // portNumber
 			storageClient,
 			[
-				new WebRoute
-				(
-					"/",
-					(webRequest, contextForCallback, callback) =>
-					{
-						var page = new WebPageFromHtmlFile
-						(
-							fileHelper,
-							WebPageStatusCodes.Instance().Ok,
-							"Pages/Welcome.html"
-						);
-
-						callback.call(contextForCallback, page);
-					}
-				),
-
-				new WebRoute
+				WebRoute.fromUrlAndFilePaths("/", "Pages/Welcome.html"),
+				WebRoute.fromUrlPathAndPage
 				(
 					"/healthcheck",
-					(webRequest, contextForCallback, callback) =>
-					{
-						callback.call
-						(
-							contextForCallback,
-							new WebPageFromElements
-							(
-								WebPageStatusCodes.Instance().Ok,
-								new WebParagraph("OK")
-							)
-						);
-					}
+					new WebPageFromElements
+					(
+						WebPageStatusCodes.Instance().Ok,
+						new WebParagraph("OK")
+					)
 				),
-
-				new WebRoute
+				WebRoute.fromUrlAndFilePaths
 				(
-					"/fromFile",
-					(webRequest, contextForCallback, callback) =>
-					{
-						var page = new WebPageFromHtmlFile
-						(
-							fileHelper,
-							WebPageStatusCodes.Instance().Ok,
-							"Pages/FromFile.html"
-						);
-
-						callback.call(contextForCallback, page);
-					}
+					"/fromFile", "Pages/FromFile.html"
 				),
-
-				new WebRoute
-				(
-					"/ItemSearch.html",
-					(webRequest, contextForCallback, callback) =>
-					{
-						var page = new WebPageFromHtmlFile
-						(
-							fileHelper,
-							WebPageStatusCodes.Instance().Ok,
-							"Pages/ItemSearch.html"
-						);
-
-						callback.call(contextForCallback, page);
-					}
-				),
-
-
-				new WebRoute
-				(
-					"/UserDetails.html",
-					(webRequest, contextForCallback, callback) =>
-					{
-						var page = new WebPageFromHtmlFile
-						(
-							fileHelper,
-							WebPageStatusCodes.Instance().Ok,
-							"Pages/UserDetails.html"
-						);
-
-						callback.call(contextForCallback, page);
-					}
-				),
-
-				new WebRoute
-				(
-					"/UserLogin.html",
-					(webRequest, contextForCallback, callback) =>
-					{
-						var page = new WebPageFromHtmlFile
-						(
-							fileHelper,
-							WebPageStatusCodes.Instance().Ok,
-							"Pages/UserLogin.html"
-						);
-
-						callback.call(contextForCallback, page);
-					}
-				),
-
+				WebRoute.fromPageName("ItemSearch"),
+				WebRoute.fromPageName("UserDetails"),
+				WebRoute.fromPageName("UserLogin")
 			]
 		);
 

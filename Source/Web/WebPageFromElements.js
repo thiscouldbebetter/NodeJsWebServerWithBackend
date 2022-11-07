@@ -7,7 +7,7 @@ exports.WebPageFromElements = class WebPageFromElements
 		this.elementRoot = elementRoot;
 	}
 
-	toStringHtml()
+	toStringHtmlForWebServer(webServer)
 	{
 		var elementRootAsHtml =
 			this.elementRoot.toStringHtml();

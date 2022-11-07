@@ -1,17 +1,18 @@
 
 exports.WebPageFromHtmlFile = class WebPageFromHtmlFile
 {
-	constructor(fileHelper, statusCode, filePath)
+	constructor(statusCode, filePath)
 	{
-		this.fileHelper = fileHelper;
 		this.statusCode = statusCode;
 		this.filePath = filePath;
 	}
 
-	toStringHtml()
+	toStringHtmlForWebServer(webServer)
 	{
+		var fileHelper = webServer.storageClient.fileHelper;
+
 		var pageAsHtml =
-			this.fileHelper.fileAtPathContentsRead(this.filePath);
+			fileHelper.fileAtPathContentsRead(this.filePath);
 
 		return pageAsHtml;
 	}

@@ -12,6 +12,8 @@ var WebList =
 	require("./Elements/WebList").WebList;
 var WebPageFromElements =
 	require("./WebPageFromElements").WebPageFromElements;
+var WebPageFromHtmlFile =
+	require("./WebPageFromHtmlFile").WebPageFromHtmlFile;
 var WebPageStatusCodes =
 	require("./Elements/WebPageStatusCodes").WebPageStatusCodes;
 var WebParagraph =
@@ -42,33 +44,14 @@ exports.WebServer = class WebServer
 		webRequest, contextForCallback, callback
 	)
 	{
-		var pageToReturn = null;
+		console.log("No route found.");
 
-		this.storageClient.connect();
-		this.storageClient.itemsGetAll
-		(
-			this, // context
-
-			(itemsRetrieved) =>
-			{
-				pageToReturn = new WebPageFromElements
-				(
-					WebPageStatusCodes.Instance().Ok,
-					new WebDivision
-					([
-						new WebHeading(3, "Node.js Web Server with Backend"),
-						new WebParagraph
-						(
-							"A simple Node.js web server with a backing data store."
-						),
-						new WebLabel("Items Retrieved:"),
-						new WebList(itemsRetrieved)
-					])
-				);
-
-				callback.call(contextForCallback, pageToReturn);
-			}
+		var pageErrorNotFound = new WebPageFromHtmlFile(
+			WebPageStatusCodes.Instance().NotFound,
+			"Pages/Errors/NotFound.html"
 		);
+		
+		callback.call(contextForCallback, pageErrorNotFound)
 	}
 
 	routeByPath(path)
@@ -101,25 +84,28 @@ exports.WebServer = class WebServer
 		}
 		else
 		{
+			var webServer = this;
+
 			var requestUrlParsed = url.parse(webRequest.url);
 			var requestPath = requestUrlParsed.pathname;
 			var routeForRequestPath =
 				this.routeByPath(requestPath);
 
-			var pageGetForPath =
+			var pageGetForWebRequest =
 			(
 				routeForRequestPath == null
 				? this.pageGetForWebRequestDefault
 				: routeForRequestPath.pageGetForWebRequest
 			);
-			pageGetForPath.call
+			pageGetForWebRequest.call
 			(
 				this,
 				webRequest,
 				this, // contextForCallback
 				(pageToRender) => // callback
 				{
-					var htmlToReturn = pageToRender.toStringHtml();
+					var htmlToReturn =
+						pageToRender.toStringHtmlForWebServer(this);
 					console.log("Returning: " + htmlToReturn);
 
 					webResult.writeHead
