@@ -1,5 +1,7 @@
 var WebPageFromHtmlFile =
 	require("./WebPageFromHtmlFile").WebPageFromHtmlFile;
+var WebPageWithVariableSubstitution =
+	require("./WebPageWithVariableSubstitution").WebPageWithVariableSubstitution;
 var WebPageStatusCodes =
 	require("./Elements/WebPageStatusCodes").WebPageStatusCodes;
 
@@ -8,7 +10,7 @@ exports.WebRoute = class WebRoute
 	constructor(path, pageGetForWebRequest)
 	{
 		this.path = path;
-		this.pageGetForWebRequest = pageGetForWebRequest;
+		this._pageGetForWebRequest = pageGetForWebRequest;
 	}
 
 	static fromPageName(pageName)
@@ -25,10 +27,13 @@ exports.WebRoute = class WebRoute
 		return WebRoute.fromUrlPathAndPage
 		(
 			urlPath,
-			new WebPageFromHtmlFile
+			new WebPageWithVariableSubstitution
 			(
-				WebPageStatusCodes.Instance().Ok,
-				filePath
+				new WebPageFromHtmlFile
+				(
+					WebPageStatusCodes.Instance().Ok,
+					filePath
+				)
 			)
 		);
 	}
@@ -38,10 +43,15 @@ exports.WebRoute = class WebRoute
 		return new WebRoute
 		(
 			urlPath,
-			(webRequest, contextForCallback, callback) =>
+			(webRequestWithBody, contextForCallback, callback) =>
 			{
 				callback.call(contextForCallback, page);
 			}
 		);
+	}
+
+	pageGetForWebRequest(webRequestWithBody, contextForCallback, callback)
+	{
+		this._pageGetForWebRequest(webRequestWithBody, contextForCallback, callback);
 	}
 }

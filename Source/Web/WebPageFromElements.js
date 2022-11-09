@@ -3,11 +3,16 @@ exports.WebPageFromElements = class WebPageFromElements
 {
 	constructor(statusCode, elementRoot)
 	{
-		this.statusCode = statusCode;
+		this._statusCode = statusCode;
 		this.elementRoot = elementRoot;
 	}
 
-	toStringHtmlForWebServer(webServer)
+	statusCode()
+	{
+		return this._statusCode;
+	}
+
+	toStringHtmlForWebServerAndRequest(webServer, webRequest)
 	{
 		var elementRootAsHtml =
 			this.elementRoot.toStringHtml();

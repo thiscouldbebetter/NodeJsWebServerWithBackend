@@ -18,6 +18,8 @@ var WebPageStatusCodes =
 	require("./Elements/WebPageStatusCodes").WebPageStatusCodes;
 var WebParagraph =
 	require("./Elements/WebParagraph").WebParagraph;
+var WebRequestWithBody =
+	require("./WebRequestWithBody").WebRequestWithBody;
 
 exports.WebServer = class WebServer
 {
@@ -38,20 +40,30 @@ exports.WebServer = class WebServer
 		(
 			this.routes.map(x => [ x.path, x ] )
 		);
+
+		this.isLoggingEnabled = false;
+	}
+
+	log(messageToLog)
+	{
+		if (this.isLoggingEnabled)
+		{
+			console.log(messageToLog);
+		}
 	}
 
 	pageGetForWebRequestDefault(
 		webRequest, contextForCallback, callback
 	)
 	{
-		console.log("No route found.");
+		log("No route found.");
 
 		var pageErrorNotFound = new WebPageFromHtmlFile(
 			WebPageStatusCodes.Instance().NotFound,
 			"Pages/Errors/NotFound.html"
 		);
-		
-		callback.call(contextForCallback, pageErrorNotFound)
+
+		callback.call(contextForCallback, pageErrorNotFound);
 	}
 
 	routeByPath(path)
@@ -67,7 +79,7 @@ exports.WebServer = class WebServer
 		);
 
 		this.server.listen(this.portNumber, this.hostAddress);
-		console.log
+		this.log
 		(
 			"Server running at http://"
 			+ this.hostAddress + ":" + this.portNumber + "/"
@@ -84,37 +96,64 @@ exports.WebServer = class WebServer
 		}
 		else
 		{
-			var webServer = this;
+			var requestBodySoFar = "";
 
-			var requestUrlParsed = url.parse(webRequest.url);
-			var requestPath = requestUrlParsed.pathname;
-			var routeForRequestPath =
-				this.routeByPath(requestPath);
-
-			var pageGetForWebRequest =
+			webRequest.on
 			(
-				routeForRequestPath == null
-				? this.pageGetForWebRequestDefault
-				: routeForRequestPath.pageGetForWebRequest
-			);
-			pageGetForWebRequest.call
-			(
-				this,
-				webRequest,
-				this, // contextForCallback
-				(pageToRender) => // callback
+				"data",
+				(chunk) =>
 				{
-					var htmlToReturn =
-						pageToRender.toStringHtmlForWebServer(this);
-					console.log("Returning: " + htmlToReturn);
+					requestBodySoFar += chunk;
+				}
+			);
 
-					webResult.writeHead
+			webRequest.on
+			(
+				"end",
+				() =>
+				{
+					var postVariablesByName = null;
+
+					var webRequestWithBody = new WebRequestWithBody
 					(
-						pageToRender.statusCode,
-						{"Content-Type": "text/html"}
+						webRequest, requestBodySoFar
 					);
 
-					webResult.end(htmlToReturn);
+					var requestUrlParsed = url.parse(webRequest.url);
+					var requestPath = requestUrlParsed.pathname;
+					var routeForRequestPath =
+						this.routeByPath(requestPath);
+
+					var pageGetForWebRequest =
+					(
+						routeForRequestPath == null
+						? this.pageGetForWebRequestDefault
+						: routeForRequestPath.pageGetForWebRequest
+					);
+					pageGetForWebRequest.call
+					(
+						routeForRequestPath,
+						webRequestWithBody,
+						this, // contextForCallback
+						(pageToRender) => // callback
+						{
+							var htmlToReturn =
+								pageToRender.toStringHtmlForWebServerAndRequest
+								(
+									this, webRequestWithBody
+								);
+							this.log("Returning: " + htmlToReturn);
+
+							webResult.writeHead
+							(
+								pageToRender.statusCode(),
+								{"Content-Type": "text/html"}
+							);
+
+							webResult.end(htmlToReturn);
+						}
+					);
+
 				}
 			);
 
